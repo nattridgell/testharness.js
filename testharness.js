@@ -905,34 +905,44 @@ policies and contribution forms [3].
 
     function assert_object_equals(actual, expected, description)
     {
-         //This needs to be improved a great deal
-         function check_equal(actual, expected, stack)
-         {
-             stack.push(actual);
+        // This needs to be improved a great deal
+        function check_equal(actual, expected, stack)
+        {
+            stack.push(actual);
 
-             var p;
-             for (p in actual) {
-                 assert(expected.hasOwnProperty(p), "assert_object_equals", description,
-                                                    "unexpected property ${p}", {p:p});
+            var p;
+            for (p in actual) {
+                assert(p in expected, "assert_object_equals", description,
+                                      "unexpected property ${p}", {p:p});
+                if (actual.hasOwnProperty(p)) {
+                    assert(expected.hasOwnProperty(p),
+                           "assert_object_equals", description,
+                           "property ${p} found on object expected in prototype chain", {p:p});
+                }
 
-                 if (typeof actual[p] === "object" && actual[p] !== null) {
-                     if (stack.indexOf(actual[p]) === -1) {
-                         check_equal(actual[p], expected[p], stack);
-                     }
-                 } else {
-                     assert(same_value(actual[p], expected[p]), "assert_object_equals", description,
-                                                       "property ${p} expected ${expected} got ${actual}",
-                                                       {p:p, expected:expected, actual:actual});
-                 }
-             }
-             for (p in expected) {
-                 assert(actual.hasOwnProperty(p),
-                        "assert_object_equals", description,
-                        "expected property ${p} missing", {p:p});
-             }
-             stack.pop();
-         }
-         check_equal(actual, expected, []);
+                if (typeof actual[p] === "object" && actual[p] !== null) {
+                    if (stack.indexOf(actual[p]) === -1) {
+                        check_equal(actual[p], expected[p], stack);
+                    }
+                } else {
+                    assert(same_value(actual[p], expected[p]),
+                           "assert_object_equals", description,
+                           "property ${p} expected ${expected} got ${actual}",
+                           {p:p, expected:expected[p], actual:actual[p]});
+                }
+            }
+            for (p in expected) {
+                assert(p in actual, "assert_object_equals", description,
+                                    "expected property ${p} missing", {p:p});
+                if (expected.hasOwnProperty(p)) {
+                    assert(actual.hasOwnProperty(p),
+                           "assert_object_equals", description,
+                           "property ${p} found in prototype chain expected on object", {p:p});
+                }
+            }
+            stack.pop();
+        }
+        check_equal(actual, expected, []);
     }
     expose(assert_object_equals, "assert_object_equals");
 
